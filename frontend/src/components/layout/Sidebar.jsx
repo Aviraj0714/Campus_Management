@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
     Dashboard as DashboardIcon,
     School as SchoolIcon,
@@ -8,8 +8,12 @@ import {
     Person as PersonIcon,
     Menu as MenuIcon,
     ChevronLeft as ChevronLeftIcon,
+    Logout as LogoutIcon,
+    MoreVert as MoreVertIcon,
 } from '@mui/icons-material'
-import { IconButton } from '@mui/material'
+import { IconButton, Avatar, Menu, MenuItem, ListItemIcon, Divider, Typography, Button } from '@mui/material'
+import { useAppDispatch, useAppSelector } from '../../store/hooks'
+import { selectUser, logout } from '../../store/slices/authSlice'
 
 const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: DashboardIcon },
@@ -20,7 +24,30 @@ const navItems = [
 ]
 
 const Sidebar = ({ collapsed, onToggle }) => {
+    const navigate = useNavigate()
+    const dispatch = useAppDispatch()
+    const user = useAppSelector(selectUser)
+
+    // Menu State
+    const [anchorEl, setAnchorEl] = useState(null)
+    const open = Boolean(anchorEl)
+
+    const handleMenuOpen = (event) => {
+        setAnchorEl(event.currentTarget)
+    }
+
+    const handleMenuClose = () => {
+        setAnchorEl(null)
+    }
+
+    const handleLogout = async () => {
+        handleMenuClose()
+        await dispatch(logout())
+        navigate('/login')
+    }
+
     return (
+
         <aside
             className={`fixed left-0 top-0 h-screen bg-white border-r border-gray-200 transition-all duration-300 z-50 flex flex-col ${collapsed ? 'w-20' : 'w-64'
                 }`}
@@ -74,14 +101,89 @@ const Sidebar = ({ collapsed, onToggle }) => {
                 </ul>
             </nav>
 
-            {/* Footer */}
-            {!collapsed && (
-                <div className="p-4 border-t border-gray-100">
-                    <p className="text-xs text-gray-400 text-center">© 2026 AttendEase</p>
-                </div>
-            )}
+            {/* User Profile Section */}
+            <div className="p-3 border-t border-gray-100">
+                <Button
+                    onClick={handleMenuOpen}
+                    className={`w-full rounded-xl transition-all duration-200 hover:bg-gray-50 ${collapsed ? 'justify-center min-w-0 px-0' : 'justify-start px-3 py-2'
+                        }`}
+                >
+                    <div className="flex items-center gap-3 w-full">
+                        <Avatar
+                            alt={user?.firstName || 'User'}
+                            src={user?.avatar}
+                            className={`${collapsed ? 'w-10 h-10' : 'w-10 h-10'} bg-primary-100 text-primary-700 font-bold`}
+                        >
+                            {user?.firstName?.charAt(0) || 'U'}
+                        </Avatar>
+
+                        {!collapsed && (
+                            <div className="flex-1 text-left overflow-hidden">
+                                <Typography variant="subtitle2" className="font-semibold text-gray-800 truncate">
+                                    {user?.firstName} {user?.lastName}
+                                </Typography>
+                                <Typography variant="caption" className="text-gray-500 truncate block">
+                                    {user?.role?.replace('_', ' ')}
+                                </Typography>
+                            </div>
+                        )}
+
+                        {!collapsed && <MoreVertIcon className="text-gray-400 text-sm" />}
+                    </div>
+                </Button>
+
+                <Menu
+                    anchorEl={anchorEl}
+                    open={open}
+                    onClose={handleMenuClose}
+                    onClick={handleMenuClose}
+                    PaperProps={{
+                        elevation: 0,
+                        sx: {
+                            overflow: 'visible',
+                            filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                            mt: 1.5,
+                            '& .MuiAvatar-root': {
+                                width: 32,
+                                height: 32,
+                                ml: -0.5,
+                                mr: 1,
+                            },
+                            '&:before': {
+                                content: '""',
+                                display: 'block',
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 14, // Adjust based on sidebar
+                                width: 10,
+                                height: 10,
+                                bgcolor: 'background.paper',
+                                transform: 'translateY(50%) rotate(45deg)',
+                                zIndex: 0,
+                            },
+                        },
+                    }}
+                    transformOrigin={{ horizontal: 'left', vertical: 'bottom' }}
+                    anchorOrigin={{ horizontal: 'left', vertical: 'top' }}
+                >
+                    <MenuItem onClick={() => navigate('/profile')}>
+                        <ListItemIcon>
+                            <PersonIcon fontSize="small" />
+                        </ListItemIcon>
+                        Profile
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={handleLogout}>
+                        <ListItemIcon>
+                            <LogoutIcon fontSize="small" />
+                        </ListItemIcon>
+                        Logout
+                    </MenuItem>
+                </Menu>
+            </div>
         </aside>
     )
 }
+
 
 export default Sidebar

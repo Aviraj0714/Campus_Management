@@ -38,12 +38,12 @@ const connectDB = async () => {
       socketTimeoutMS: 45000,
     });
     logger.info('MongoDB connected successfully');
-    
+
     // Create indexes
     await mongoose.model('Attendance').ensureIndexes();
     await mongoose.model('DailyUpdate').ensureIndexes();
     await mongoose.model('User').ensureIndexes();
-    
+
   } catch (error) {
     logger.error('MongoDB connection error:', error);
     process.exit(1);
@@ -60,6 +60,7 @@ const attendanceRoutes = require('./routes/attendance.routes');
 const dailyUpdateRoutes = require('./routes/dailyUpdate.routes');
 const auditRoutes = require('./routes/audit.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const departmentRoutes = require('./routes/department.routes');
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -79,6 +80,7 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/daily-updates', dailyUpdateRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/departments', departmentRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,23 +1,43 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import MainLayout from './components/layout/MainLayout'
+import { ProtectedRoute, RoleBasedRoute } from './components/auth/ProtectedRoute'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
+import Unauthorized from './pages/Unauthorized'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
 import Departments from './pages/Departments'
 import Subjects from './pages/Subjects'
 import Teachers from './pages/Teachers'
+import Profile from './pages/Profile'
+
+// Roles that can access the dashboard
+const DASHBOARD_ROLES = ['ADMIN', 'MANAGER', 'TEAM_LEADER', 'TRAINER', 'TA']
 
 function App() {
     return (
         <Routes>
+            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<MainLayout />}>
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* Protected Routes - Accessible by ADMIN, MANAGER, TEAM_LEADER, TRAINER, TA */}
+            <Route
+                path="/"
+                element={
+                    <RoleBasedRoute allowedRoles={DASHBOARD_ROLES}>
+                        <MainLayout />
+                    </RoleBasedRoute>
+                }
+            >
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="students" element={<Students />} />
                 <Route path="departments" element={<Departments />} />
                 <Route path="subjects" element={<Subjects />} />
                 <Route path="teachers" element={<Teachers />} />
+                <Route path="profile" element={<Profile />} />
             </Route>
         </Routes>
     )

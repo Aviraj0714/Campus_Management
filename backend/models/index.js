@@ -4,6 +4,7 @@ const Classroom = require('./Classroom.model');
 const Attendance = require('./Attendance.model');
 const DailyUpdate = require('./DailyUpdate.model');
 const AuditLog = require('./AuditLog.model');
+const Department = require('./Department.model');
 
 module.exports = {
   User,
@@ -11,5 +12,6 @@ module.exports = {
   Classroom,
   Attendance,
   DailyUpdate,
-  AuditLog
+  AuditLog,
+  Department
 };
