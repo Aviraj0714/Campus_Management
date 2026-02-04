@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
 import {
     TextField,
     Button,
@@ -7,6 +7,8 @@ import {
     Typography,
     InputAdornment,
     IconButton,
+    Alert,
+    CircularProgress,
 } from '@mui/material'
 import {
     Person as PersonIcon,
@@ -14,19 +16,49 @@ import {
     Visibility,
     VisibilityOff,
 } from '@mui/icons-material'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
+import { login, selectAuthLoading, selectAuthError, selectIsAuthenticated, clearError } from '../store/slices/authSlice'
 
 const Login = () => {
     const navigate = useNavigate()
+    const dispatch = useAppDispatch()
+    const loading = useAppSelector(selectAuthLoading)
+    const authError = useAppSelector(selectAuthError)
+    const isAuthenticated = useAppSelector(selectIsAuthenticated)
+
     const [showPassword, setShowPassword] = useState(false)
+    const [loginError, setLoginError] = useState('')
     const [formData, setFormData] = useState({
-        username: '',
+        email: '',
         password: '',
     })
 
-    const handleSubmit = (e) => {
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard')
+        }
+    }, [isAuthenticated, navigate])
+
+    // Clear error on mount
+    useEffect(() => {
+        dispatch(clearError())
+    }, [dispatch])
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        // For demo, just navigate to dashboard
-        navigate('/dashboard')
+        setLoginError('')
+
+        try {
+            await dispatch(login({
+                email: formData.email, // Backend expects email
+                password: formData.password,
+            })).unwrap()
+
+            navigate('/dashboard')
+        } catch (error) {
+            setLoginError(error || 'Login failed. Please check your credentials.')
+        }
     }
 
     const handleChange = (e) => {
@@ -93,12 +125,17 @@ const Login = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-5">
+                        {(loginError || authError) && (
+                            <Alert severity="error" className="mb-4">
+                                {loginError || authError}
+                            </Alert>
+                        )}
                         <TextField
                             fullWidth
-                            name="username"
-                            label="Username"
-                            placeholder="Enter your username"
-                            value={formData.username}
+                            name="email"
+                            label="Email"
+                            placeholder="Enter your email"
+                            value={formData.email}
                             onChange={handleChange}
                             InputProps={{
                                 startAdornment: (
@@ -141,18 +178,19 @@ const Login = () => {
                             fullWidth
                             variant="contained"
                             size="large"
+                            disabled={loading}
                             className="bg-primary-500 hover:bg-primary-600 py-3 text-lg font-semibold shadow-lg shadow-primary-500/30"
                         >
-                            Sign In
+                            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
                         </Button>
                     </form>
 
                     <div className="mt-6 text-center">
                         <Typography variant="body2" className="text-gray-500">
-                            Forgot your password?{' '}
-                            <span className="text-primary-500 cursor-pointer hover:underline">
-                                Reset it here
-                            </span>
+                            Don't have an account?{' '}
+                            <Link to="/signup" className="text-primary-500 hover:underline font-medium">
+                                Sign Up
+                            </Link>
                         </Typography>
                     </div>
                 </Paper>

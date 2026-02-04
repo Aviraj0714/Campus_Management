@@ -26,7 +26,7 @@ const login = async (req, res) => {
 
     // Find user
     const user = await User.findOne({ email }).select('+password');
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -44,10 +44,10 @@ const login = async (req, res) => {
 
     // Check password
     const isPasswordMatch = await user.comparePassword(password);
-    
+    console.log(isPasswordMatch);
     if (!isPasswordMatch) {
       await user.incrementLoginAttempts();
-      
+
       auditLogger.warn('Failed login attempt', {
         email,
         ip: req.ip,
@@ -97,6 +97,92 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// @desc    Register new user
+// @route   POST /api/auth/register
+// @access  Public
+const register = async (req, res) => {
+  try {
+    const { email, username, password, firstName, lastName, phone, role } = req.body;
+
+    // Validate input
+    if (!email || !username || !password || !firstName || !lastName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: existingUser.email === email
+          ? 'Email already registered'
+          : 'Username already taken'
+      });
+    }
+
+    // Validate role
+    const validRoles = ['ADMIN', 'MANAGER', 'TEAM_LEADER', 'TRAINER', 'TA', 'LEARNER'];
+    const userRole = role && validRoles.includes(role) ? role : 'LEARNER';
+
+    // Create user
+    const user = await User.create({
+      email,
+      username,
+      password,
+      firstName,
+      lastName,
+      phone,
+      role: userRole
+    });
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    // Audit log
+    auditLogger.info('New user registered', {
+      userId: user._id,
+      email: user.email,
+      role: user.role,
+      ip: req.ip
+    });
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      }
+    });
+  } catch (error) {
+    console.error('Register error:', error);
+
+    // Handle mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -154,7 +240,7 @@ const logout = async (req, res) => {
 const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
@@ -170,7 +256,7 @@ const changePassword = async (req, res) => {
     }
 
     const user = await User.findById(req.user.id).select('+password');
-    
+
     // Check current password
     const isMatch = await user.comparePassword(currentPassword);
     if (!isMatch) {
@@ -204,6 +290,7 @@ const changePassword = async (req, res) => {
 
 module.exports = {
   login,
+  register,
   getMe,
   logout,
   changePassword

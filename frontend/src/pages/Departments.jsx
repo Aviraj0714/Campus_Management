@@ -25,15 +25,21 @@ const Departments = () => {
         startDate: '',
     })
 
-    // Generate unique code: DDMM_COURSENAME (e.g., 0202_MERN)
+    // Generate unique code: coursebatchMonthYear (e.g., mern1dec25, azure1feb26)
     const generateCode = (name, startDate) => {
         if (!startDate || !name) return ''
         const date = new Date(startDate)
-        const day = String(date.getDate()).padStart(2, '0')
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        // Extract course abbreviation from name (first word or acronym)
-        const courseCode = name.split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '')
-        return `${day}${month}_${courseCode}`
+        const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+        const month = monthNames[date.getMonth()]
+        const year = String(date.getFullYear()).slice(-2)
+        // Extract course abbreviation from name (first word, lowercase)
+        const courseCode = name.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '')
+        // Count existing batches with same course to get batch number
+        const existingBatches = departments.filter(d =>
+            d.code?.toLowerCase().startsWith(courseCode)
+        ).length
+        const batchNum = existingBatches + 1
+        return `${courseCode}${batchNum}${month}${year}`
     }
 
     const columns = [
@@ -198,7 +204,7 @@ const Departments = () => {
                                     {previewCode}
                                 </Typography>
                                 <Typography variant="caption" className="text-gray-400">
-                                    Format: DDMM_COURSENAME
+                                    Format: courseBatchMonthYear (e.g., azure1feb26)
                                 </Typography>
                             </div>
                         )}
